@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>개인용 영양제 타임라인 (성분 확장판)</title>
+  <title>개인용 영양제 타임라인 (자동 푸시 알림)</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
@@ -14,7 +14,7 @@
       <h1 class="text-xl font-bold flex items-center gap-2">
         <span>💊</span> 내 손안의 영양제 타임라인
       </h1>
-      <p class="text-xs text-slate-400 mt-1">30+가지 성분 기반 자동 시간 배정 및 알림 시스템</p>
+      <p class="text-xs text-slate-400 mt-1">시간순 자동 정렬 & 실시간 브라우저 자동 알림 시스템</p>
 
       <!-- 프로그레스 바 -->
       <div class="mt-4 bg-slate-700 rounded-full h-3 overflow-hidden">
@@ -85,41 +85,29 @@
 
       <button onclick="addSupplement()" 
               class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm py-2 rounded-lg transition shadow-lg">
-        성분 최적 시각으로 자동 등록하기
+        성분 최적 시각으로 자동 정렬 등록
       </button>
+    </div>
+
+    <!-- 브라우저 푸시 알림 설정 및 테스트 영역 -->
+    <div class="p-4 bg-slate-800 border-b border-slate-700">
+      <button onclick="requestAndTestNotification()" 
+              class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-md transition">
+        <span>🔔</span> 앱 알림 권한 허용 및 테스트
+      </button>
+      <div id="permission-status" class="text-[11px] text-center text-slate-400 mt-2">
+        상태: 알림 권한 확인 중...
+      </div>
     </div>
 
     <!-- 타임라인 리스트 -->
     <div id="timeline-list" class="p-4 space-y-3 max-h-[420px] overflow-y-auto">
       <!-- JS로 동적 생성됨 -->
     </div>
-
-    <!-- 하단 버튼 -->
-    <div class="p-4 border-t border-slate-700 bg-slate-800">
-      <button onclick="showTelegramTest()" 
-              class="w-full bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-md">
-        <span>📲</span> 텔레그램 알림 메시지 미리보기
-      </button>
-    </div>
-  </div>
-
-  <!-- 텔레그램 알림 팝업 모달 -->
-  <div id="telegram-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-sky-500/30 rounded-2xl p-5 max-w-xs w-full shadow-2xl">
-      <div class="flex items-center gap-2 text-sky-400 font-bold text-sm mb-3">
-        <span>✈️</span> Telegram Notification Preview
-      </div>
-      <div id="modal-content" class="bg-slate-900 p-3 rounded-lg text-xs font-mono space-y-2 border border-slate-700 text-slate-200 whitespace-pre-line">
-        <!-- 메시지 내용 -->
-      </div>
-      <button onclick="closeTelegramTest()" class="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded-lg">
-        닫기
-      </button>
-    </div>
   </div>
 
   <script>
-    // 30여 개 성분별 최적 복용 시간 및 팁 데이터베이스
+    // 성분별 최적 복용 시간 데이터베이스
     const TIME_MAP = {
       // 아침 공복 (07:30)
       '유산균(프로바이오틱스)': { slot: '아침 공복', time: '07:30', tip: '위산이 적은 공복에 미지근한 물과 함께' },
@@ -170,8 +158,10 @@
       { id: 4, name: '닥터스베스트 마그네슘', ingredient: '마그네슘', slot: '취침 전', time: '22:00', tip: '근육 이완 및 신경 안정, 숙면 유도', completed: false }
     ];
 
-    // 화면 렌더링 함수
+    // 화면 렌더링 함수 (시간순 자동 정렬)
     function render() {
+      supplements.sort((a, b) => a.time.localeCompare(b.time));
+
       const listEl = document.getElementById('timeline-list');
       listEl.innerHTML = '';
 
@@ -216,6 +206,8 @@
 
       document.getElementById('progress-bar').style.width = percent + '%';
       document.getElementById('progress-text').innerText = `${percent}% (${completedCount}/${totalCount}개 완료)`;
+
+      updatePermissionStatus();
     }
 
     // 영양제 추가 함수
@@ -238,7 +230,7 @@
         completed: false
       };
 
-      supplements.unshift(newItem);
+      supplements.push(newItem);
       nameInput.value = '';
       render();
     }
@@ -255,28 +247,86 @@
       render();
     }
 
-    // 텔레그램 미리보기 모달
-    function showTelegramTest() {
-      const pending = supplements.filter(s => !s.completed);
-      let msg = `<b>💊 [영양제 복용 알림]</b>\n\n`;
-      
-      if (pending.length === 0) {
-        msg += `오늘 복용할 모든 영양제를 완료했습니다! 🎉`;
-      } else {
-        msg += `챙겨 드셔야 할 영양제 목록입니다:\n\n`;
-        pending.forEach(p => {
-          msg += `• <b>${p.name}</b>\n  └ ⏰ ${p.slot} (${p.time})\n`;
-        });
-        msg += `\n<a href="#">👉 완료 체크하러 가기</a>`;
+    // --- 🔔 브라우저 푸시 알림 및 자동 타이머 제어 ---
+
+    // 알림 권한 상태 텍스트 업데이트
+    function updatePermissionStatus() {
+      const statusEl = document.getElementById('permission-status');
+      if (!("Notification" in window)) {
+        statusEl.innerText = "⚠️ 이 브라우저는 푸시 알림을 지원하지 않습니다.";
+        statusEl.className = "text-[11px] text-center text-amber-400 mt-2";
+        return;
       }
 
-      document.getElementById('modal-content').innerHTML = msg;
-      document.getElementById('telegram-modal').classList.remove('hidden');
+      if (Notification.permission === "granted") {
+        statusEl.innerText = "✅ 알림 권한이 허용되었습니다. (설정된 시간에 자동 알림이 도착합니다)";
+        statusEl.className = "text-[11px] text-center text-emerald-400 mt-2";
+      } else if (Notification.permission === "denied") {
+        statusEl.innerText = "❌ 알림 권한이 거부되었습니다. (주소창 왼쪽 설정에서 허용해 주세요)";
+        statusEl.className = "text-[11px] text-center text-rose-400 mt-2";
+      } else {
+        statusEl.innerText = "ℹ️ 위 버튼을 눌러 알림 권한을 허용해 주세요.";
+        statusEl.className = "text-[11px] text-center text-sky-400 mt-2";
+      }
     }
 
-    function closeTelegramTest() {
-      document.getElementById('telegram-modal').classList.add('hidden');
+    // 권한 요청 및 수동 테스트 알림
+    function requestAndTestNotification() {
+      if (!("Notification" in window)) {
+        alert("이 브라우저는 알림 기능을 지원하지 않습니다.");
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        triggerNotification("🔔 [알림 테스트]", "브라우저 푸시 알림이 정상 작동합니다!");
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            triggerNotification("🔔 [알림 테스트]", "알림 권한이 허용되었습니다!");
+          } else {
+            alert("알림 권한이 거부되었습니다.");
+          }
+          updatePermissionStatus();
+        });
+      } else {
+        alert("알림 권한이 차단되어 있습니다. 브라우저 주소창 왼쪽 아이콘을 눌러 알림을 허용으로 변경해 주세요.");
+      }
     }
+
+    // 알림 발송 공통 함수
+    function triggerNotification(title, body) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, {
+          body: body,
+          icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965567.png'
+        });
+      }
+    }
+
+    // ⏰ 실시간 자동 알림 타이머 (10초마다 시간 체크)
+    let lastNotifiedMin = "";
+
+    setInterval(() => {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+      const now = new Date();
+      const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      // 이미 이번 분에 알림을 발송했다면 중복 방지
+      if (lastNotifiedMin === currentHHMM) return;
+
+      // 현재 시각과 동일하고, 아직 복용 안 한(completed: false) 영양제 검색
+      const dueItems = supplements.filter(s => !s.completed && s.time === currentHHMM);
+
+      if (dueItems.length > 0) {
+        lastNotifiedMin = currentHHMM;
+        const itemNames = dueItems.map(s => s.name).join(', ');
+        triggerNotification(
+          `💊 [영양제 복용 시간 - ${currentHHMM}]`,
+          `지금 챙겨 드세요: ${itemNames}`
+        );
+      }
+    }, 10000); // 10초마다 현재 시각 감시
 
     // 초기 실행
     render();
