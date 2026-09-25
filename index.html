@@ -1,4 +1,115 @@
-<script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>개인용 영양제 타임라인</title>
+
+  <!-- 💊 아이폰 PWA 전용 알약 아이콘 -->
+  <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/pill.png">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 flex justify-center items-start">
+
+  <div class="w-full max-w-md space-y-6">
+    <!-- 헤더 -->
+    <div class="text-center space-y-2">
+      <h1 class="text-2xl font-bold flex items-center justify-center gap-2">
+        <span>💊</span> 나의 영양제 타임라인
+      </h1>
+      <p class="text-xs text-slate-400">성분별 최적의 복용 시간에 맞춘 영양제 관리</p>
+    </div>
+
+    <!-- 복용 달성률 프로그레스 바 -->
+    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-2 shadow-lg">
+      <div class="flex justify-between items-center text-xs">
+        <span class="text-slate-400 font-medium">오늘의 복용 달성률</span>
+        <span id="progress-text" class="text-emerald-400 font-bold">0% (0/0개 완료)</span>
+      </div>
+      <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+        <div id="progress-bar" class="bg-emerald-500 h-full w-0 transition-all duration-500"></div>
+      </div>
+    </div>
+
+    <!-- 푸시 알림 권한 및 테스트 버튼 -->
+    <div class="bg-slate-800/50 p-3 rounded-2xl border border-slate-700/60 text-center">
+      <button onclick="requestAndTestNotification()" 
+              class="w-full py-2 px-3 bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 font-medium rounded-xl border border-slate-600 transition-all flex items-center justify-center gap-2">
+        <span>🔔</span> 앱 알림 권한 허용 및 테스트
+      </button>
+      <div id="permission-status" class="text-[11px] text-slate-400 mt-2">
+        알림 권한 상태 확인 중...
+      </div>
+    </div>
+
+    <!-- 영양제 추가 양식 -->
+    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3 shadow-lg">
+      <div class="text-xs font-semibold text-slate-300">새 영양제 추가하기</div>
+      
+      <div class="space-y-2">
+        <input type="text" id="item-name" placeholder="제품명 입력 (예: 닥터스베스트 커큐민)" 
+               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+        
+        <select id="item-ingredient" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+          <optgroup label="🌅 아침 공복 (07:30)">
+            <option value="유산균(프로바이오틱스)">유산균(프로바이오틱스)</option>
+            <option value="프리바이오틱스">프리바이오틱스</option>
+            <option value="철분">철분</option>
+            <option value="L-아르기닌">L-아르기닌</option>
+            <option value="콜라겐">콜라겐</option>
+            <option value="MSM(식이유황)">MSM(식이유황)</option>
+          </optgroup>
+          <optgroup label="☀️ 아침 식후 (08:30)">
+            <option value="비타민B군">비타민B군</option>
+            <option value="종합비타민">종합비타민</option>
+            <option value="비타민C">비타민C</option>
+            <option value="홍삼/인삼">홍삼/인삼</option>
+            <option value="코엔자임Q10">코엔자임Q10</option>
+            <option value="옥타코사놀">옥타코사놀</option>
+          </optgroup>
+          <optgroup label="🍽️ 점심 식후 (13:00)">
+            <option value="오메가3">오메가3</option>
+            <option value="비타민D">비타민D</option>
+            <option value="루테인/지아잔틴">루테인/지아잔틴</option>
+            <option value="밀크씨슬(실리마린)">밀크씨슬(실리마린)</option>
+            <option value="커큐민" selected>커큐민</option>
+            <option value="비타민A">비타민A</option>
+            <option value="비타민E">비타민E</option>
+            <option value="크릴오일">크릴오일</option>
+            <option value="아스타잔틴">아스타잔틴</option>
+          </optgroup>
+          <optgroup label="🌙 저녁 식후 (19:30)">
+            <option value="아연">아연</option>
+            <option value="글루타치온">글루타치온</option>
+            <option value="바나바잎">바나바잎</option>
+            <option value="프로폴리스">프로폴리스</option>
+            <option value="알파리포산">알파리포산</option>
+          </optgroup>
+          <optgroup label="🛌 취침 전 (22:00)">
+            <option value="마그네슘">마그네슘</option>
+            <option value="칼슘">칼슘</option>
+            <option value="L-테아닌">L-테아닌</option>
+            <option value="타트체리">타트체리</option>
+            <option value="감태추출물">감태추출물</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <button onclick="addSupplement()" 
+              class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs text-white rounded-xl transition-all shadow-md active:scale-[0.98]">
+        + 영양제 목록에 추가하기
+      </button>
+    </div>
+
+    <!-- 영양제 타임라인 리스트 -->
+    <div id="timeline-list" class="space-y-2.5">
+      <!-- 자바스크립트로 동적 생성됨 -->
+    </div>
+  </div>
+
+  <script>
     // 성분별 최적 복용 시간 데이터베이스
     const TIME_MAP = {
       '유산균(프로바이오틱스)': { slot: '아침 공복', time: '07:30', tip: '위산이 적은 공복에 미지근한 물과 함께' },
@@ -19,7 +130,7 @@
       '비타민D': { slot: '점심 식후', time: '13:00', tip: '지용성 비타민, 지방과 함께 섭취' },
       '루테인/지아잔틴': { slot: '점심 식후', time: '13:00', tip: '지용성 성분으로 식사 직후 섭취' },
       '밀크씨슬(실리마린)': { slot: '점심 식후', time: '13:00', tip: '간 건강 관리, 식후 복용 권장' },
-      '커큐민': { slot: '점심 식후', time: '13:00', tip: '지용성 항염 성분으로 지방이 포함된 식사 직후 섭취 권장' }, // 💊 커큐민 추가됨!
+      '커큐민': { slot: '점심 식후', time: '13:00', tip: '지용성 항염 성분으로 지방이 포함된 식사 직후 섭취 권장' },
       '비타민A': { slot: '점심 식후', time: '13:00', tip: '지용성 비타민' },
       '비타민E': { slot: '점심 식후', time: '13:00', tip: '지용성 항산화 비타민' },
       '크릴오일': { slot: '점심 식후', time: '13:00', tip: '지용성 성분, 식후 섭취' },
@@ -38,25 +149,25 @@
       '감태추출물': { slot: '취침 전', time: '22:00', tip: '수면의 질 개선' }
     };
 
-    // 💡 핸드폰 저장공간(localStorage)에서 데이터 영구 유지
+    // 💡 핸드폰 저장공간(localStorage)에서 데이터 가져오기 및 초기화
     const savedData = localStorage.getItem('my_supplements');
     let supplements = savedData ? JSON.parse(savedData) : [
       { id: 1, name: '락토핏 생유산균', ingredient: '유산균(프로바이오틱스)', slot: '아침 공복', time: '07:30', tip: '위산이 적은 공복에 미지근한 물과 함께', completed: false },
       { id: 2, name: '임팩타민 프리미엄', ingredient: '비타민B군', slot: '아침 식후', time: '08:30', tip: '에너지 대사 활성화', completed: true },
       { id: 3, name: '스포츠리서치 오메가3', ingredient: '오메가3', slot: '점심 식후', time: '13:00', tip: '지방이 포함된 식사 직후에 흡수율 극대화', completed: false },
-      { id: 4, name: '닥터스베스트 마그네슘', ingredient: '마그네슘', slot: '취침 전', time: '22:00', tip: '근육 이완 및 신경 안정, 숙면 유도', completed: false }
+      { id: 4, name: '테라큐민 파워', ingredient: '커큐민', slot: '점심 식후', time: '13:00', tip: '지용성 항염 성분으로 지방이 포함된 식사 직후 섭취 권장', completed: false },
+      { id: 5, name: '닥터스베스트 마그네슘', ingredient: '마그네슘', slot: '취침 전', time: '22:00', tip: '근육 이완 및 신경 안정, 숙면 유도', completed: false }
     ];
 
-    // 변경사항을 로컬스토리지에 저장하는 함수
     function saveData() {
       localStorage.setItem('my_supplements', JSON.stringify(supplements));
     }
 
-    // 화면 렌더링 함수
     function render() {
       supplements.sort((a, b) => a.time.localeCompare(b.time));
 
       const listEl = document.getElementById('timeline-list');
+      if (!listEl) return;
       listEl.innerHTML = '';
 
       if (supplements.length === 0) {
@@ -65,7 +176,7 @@
         supplements.forEach(item => {
           const div = document.createElement('div');
           div.className = `p-3 rounded-xl border transition-all ${
-            item.completed ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-slate-700/50 border-slate-600'
+            item.completed ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-slate-800/80 border-slate-700'
           }`;
           
           div.innerHTML = `
@@ -93,18 +204,18 @@
         });
       }
 
-      // 프로그레스 바 업데이트
       const completedCount = supplements.filter(s => s.completed).length;
       const totalCount = supplements.length;
       const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
-      document.getElementById('progress-bar').style.width = percent + '%';
-      document.getElementById('progress-text').innerText = `${percent}% (${completedCount}/${totalCount}개 완료)`;
+      const barEl = document.getElementById('progress-bar');
+      const textEl = document.getElementById('progress-text');
+      if (barEl) barEl.style.width = percent + '%';
+      if (textEl) textEl.innerText = `${percent}% (${completedCount}/${totalCount}개 완료)`;
 
       updatePermissionStatus();
     }
 
-    // 영양제 추가 함수
     function addSupplement() {
       const nameInput = document.getElementById('item-name');
       const ingredientSelect = document.getElementById('item-ingredient');
@@ -130,23 +241,22 @@
       render();
     }
 
-    // 체크 토글
     function toggleItem(id) {
       supplements = supplements.map(s => s.id === id ? { ...s, completed: !s.completed } : s);
       saveData();
       render();
     }
 
-    // 삭제
     function deleteItem(id) {
       supplements = supplements.filter(s => s.id !== id);
       saveData();
       render();
     }
 
-    // --- 🔔 브라우저 푸시 알림 제어 ---
     function updatePermissionStatus() {
       const statusEl = document.getElementById('permission-status');
+      if (!statusEl) return;
+
       if (!("Notification" in window)) {
         statusEl.innerText = "⚠️ 이 브라우저는 푸시 알림을 지원하지 않습니다.";
         statusEl.className = "text-[11px] text-center text-amber-400 mt-2";
@@ -196,9 +306,7 @@
       }
     }
 
-    // ⏰ 실시간 자동 알림 타이머 (10초마다 시간 체크)
     let lastNotifiedMin = "";
-
     setInterval(() => {
       if (!("Notification" in window) || Notification.permission !== "granted") return;
 
@@ -222,3 +330,5 @@
     // 초기 실행
     render();
   </script>
+</body>
+</html>
