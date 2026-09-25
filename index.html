@@ -1,116 +1,6 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>개인용 영양제 타임라인 (자동 푸시 알림)</title>
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2965/2965567.png">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
-
-  <div class="max-w-md mx-auto bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
-    <!-- 헤더 -->
-    <div class="p-5 border-b border-slate-700 bg-slate-800/80">
-      <h1 class="text-xl font-bold flex items-center gap-2">
-        <span>💊</span> 내 손안의 영양제 타임라인
-      </h1>
-      <p class="text-xs text-slate-400 mt-1">시간순 자동 정렬 & 실시간 브라우저 자동 알림 시스템</p>
-
-      <!-- 프로그레스 바 -->
-      <div class="mt-4 bg-slate-700 rounded-full h-3 overflow-hidden">
-        <div id="progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
-      </div>
-      <div class="flex justify-between text-xs text-slate-400 mt-1">
-        <span>오늘의 달성률</span>
-        <span id="progress-text" class="text-emerald-400 font-semibold">0% (0/0개)</span>
-      </div>
-    </div>
-
-    <!-- 추가 폼 -->
-    <div class="p-4 bg-slate-800/50 border-b border-slate-700 space-y-3">
-      <div class="text-xs font-semibold text-slate-300">➕ 새 영양제 등록</div>
-      <div class="space-y-2">
-        <input id="item-name" type="text" placeholder="제품명 (예: 임팩타민, 닥터스베스트 마그네슘)" 
-               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
-        
-        <!-- 카테고리별 세분화된 성분 선택 목록 -->
-        <select id="item-ingredient" 
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
-          <optgroup label="☀️ 공복 섭취 추천 (아침 07:30)">
-            <option value="유산균(프로바이오틱스)">유산균 / 프로바이오틱스</option>
-            <option value="프리바이오틱스">프리바이오틱스 (프락토올리고당)</option>
-            <option value="철분">철분</option>
-            <option value="L-아르기닌">L-아르기닌</option>
-            <option value="콜라겐">콜라겐</option>
-            <option value="MSM(식이유황)">MSM (식이유황)</option>
-          </optgroup>
-          
-          <optgroup label="🔋 활력 & 비타민 (아침 식후 08:30)">
-            <option value="비타민B군">비타민 B군 (콤플렉스)</option>
-            <option value="종합비타민">종합 / 멀티비타민</option>
-            <option value="비타민C">비타민 C</option>
-            <option value="홍삼/인삼">홍삼 / 인삼</option>
-            <option value="코엔자임Q10">코엔자임Q10 (코큐텐)</option>
-            <option value="옥타코사놀">옥타코사놀</option>
-          </optgroup>
-
-          <optgroup label="🐟 지용성 & 간/눈 건강 (점심 식후 13:00)">
-            <option value="오메가3">오메가3 (EPA/DHA)</option>
-            <option value="비타민D">비타민 D</option>
-            <option value="루테인/지아잔틴">루테인 / 지아잔틴</option>
-            <option value="밀크씨슬(실리마린)">밀크씨슬 (실리마린 / 간 건강)</option>
-            <option value="비타민A">비타민 A / 베타카로틴</option>
-            <option value="비타민E">비타민 E</option>
-            <option value="크릴오일">크릴오일</option>
-            <option value="아스타잔틴">아스타잔틴 (눈 피로)</option>
-          </optgroup>
-
-          <optgroup label="🛡️ 면역 & 항산화 (저녁 식후 19:30)">
-            <option value="아연">아연</option>
-            <option value="글루타치온">글루타치온</option>
-            <option value="바나바잎">바나바잎 (혈당 케어)</option>
-            <option value="프로폴리스">프로폴리스</option>
-            <option value="알파리포산">알파리포산</option>
-          </optgroup>
-
-          <optgroup label="🌙 수면 & 신경 안정 (취침 전 22:00)">
-            <option value="마그네슘">마그네슘</option>
-            <option value="칼슘">칼슘</option>
-            <option value="L-테아닌">L-테아닌 (스트레스 완화)</option>
-            <option value="타트체리">타트체리 (수면 유도)</option>
-            <option value="감태추출물">감태추출물 (수면 질 개선)</option>
-          </optgroup>
-        </select>
-      </div>
-
-      <button onclick="addSupplement()" 
-              class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm py-2 rounded-lg transition shadow-lg">
-        성분 최적 시각으로 자동 정렬 등록
-      </button>
-    </div>
-
-    <!-- 브라우저 푸시 알림 설정 및 테스트 영역 -->
-    <div class="p-4 bg-slate-800 border-b border-slate-700">
-      <button onclick="requestAndTestNotification()" 
-              class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-md transition">
-        <span>🔔</span> 앱 알림 권한 허용 및 테스트
-      </button>
-      <div id="permission-status" class="text-[11px] text-center text-slate-400 mt-2">
-        상태: 알림 권한 확인 중...
-      </div>
-    </div>
-
-    <!-- 타임라인 리스트 -->
-    <div id="timeline-list" class="p-4 space-y-3 max-h-[420px] overflow-y-auto">
-      <!-- JS로 동적 생성됨 -->
-    </div>
-  </div>
-
-  <script>
+<script>
     // 성분별 최적 복용 시간 데이터베이스
     const TIME_MAP = {
-      // 아침 공복 (07:30)
       '유산균(프로바이오틱스)': { slot: '아침 공복', time: '07:30', tip: '위산이 적은 공복에 미지근한 물과 함께' },
       '프리바이오틱스': { slot: '아침 공복', time: '07:30', tip: '유산균의 먹이, 공복 섭취 권장' },
       '철분': { slot: '아침 공복', time: '07:30', tip: '공복 흡수율 높음 (위장장애 시 식후로 이동)' },
@@ -118,7 +8,6 @@
       '콜라겐': { slot: '아침 공복', time: '07:30', tip: '공복 흡수가 용이' },
       'MSM(식이유황)': { slot: '아침 공복', time: '07:30', tip: '관절 건강, 아침 공복 또는 식후' },
 
-      // 아침 식후 (08:30)
       '비타민B군': { slot: '아침 식후', time: '08:30', tip: '에너지 대사 활성화 (밤 복용 시 수면 방해 가능)' },
       '종합비타민': { slot: '아침 식후', time: '08:30', tip: '하루 활력 충전 및 위장 장애 예방' },
       '비타민C': { slot: '아침 식후', time: '08:30', tip: '산성이 강해 식사 직후 복용 추천' },
@@ -126,24 +15,22 @@
       '코엔자임Q10': { slot: '아침 식후', time: '08:30', tip: '항산화 및 에너지 생성' },
       '옥타코사놀': { slot: '아침 식후', time: '08:30', tip: '지구력 증진, 오전에 복용' },
 
-      // 점심 식후 (13:00)
       '오메가3': { slot: '점심 식후', time: '13:00', tip: '지방이 포함된 식사 직후에 흡수율 극대화' },
       '비타민D': { slot: '점심 식후', time: '13:00', tip: '지용성 비타민, 지방과 함께 섭취' },
       '루테인/지아잔틴': { slot: '점심 식후', time: '13:00', tip: '지용성 성분으로 식사 직후 섭취' },
       '밀크씨슬(실리마린)': { slot: '점심 식후', time: '13:00', tip: '간 건강 관리, 식후 복용 권장' },
+      '커큐민': { slot: '점심 식후', time: '13:00', tip: '지용성 항염 성분으로 지방이 포함된 식사 직후 섭취 권장' }, // 💊 커큐민 추가됨!
       '비타민A': { slot: '점심 식후', time: '13:00', tip: '지용성 비타민' },
       '비타민E': { slot: '점심 식후', time: '13:00', tip: '지용성 항산화 비타민' },
       '크릴오일': { slot: '점심 식후', time: '13:00', tip: '지용성 성분, 식후 섭취' },
       '아스타잔틴': { slot: '점심 식후', time: '13:00', tip: '눈 피로 개선 항산화제' },
 
-      // 저녁 식후 (19:30)
       '아연': { slot: '저녁 식후', time: '19:30', tip: '면역 기능, 위장 보호를 위해 식후' },
       '글루타치온': { slot: '저녁 식후', time: '19:30', tip: '항산화 및 세포 재생' },
       '바나바잎': { slot: '저녁 식후', time: '19:30', tip: '식후 혈당 상승 억제' },
       '프로폴리스': { slot: '저녁 식후', time: '19:30', tip: '항균 및 면역 케어' },
       '알파리포산': { slot: '저녁 식후', time: '19:30', tip: '항산화 대사' },
 
-      // 취침 전 (22:00)
       '마그네슘': { slot: '취침 전', time: '22:00', tip: '근육 이완 및 신경 안정, 숙면 유도' },
       '칼슘': { slot: '취침 전', time: '22:00', tip: '뼈 건강 및 신경 안정' },
       'L-테아닌': { slot: '취침 전', time: '22:00', tip: '뇌파 알파파 발생, 스트레스 완화' },
@@ -151,15 +38,21 @@
       '감태추출물': { slot: '취침 전', time: '22:00', tip: '수면의 질 개선' }
     };
 
-    // 초기 예시 데이터
-    let supplements = [
+    // 💡 핸드폰 저장공간(localStorage)에서 데이터 영구 유지
+    const savedData = localStorage.getItem('my_supplements');
+    let supplements = savedData ? JSON.parse(savedData) : [
       { id: 1, name: '락토핏 생유산균', ingredient: '유산균(프로바이오틱스)', slot: '아침 공복', time: '07:30', tip: '위산이 적은 공복에 미지근한 물과 함께', completed: false },
       { id: 2, name: '임팩타민 프리미엄', ingredient: '비타민B군', slot: '아침 식후', time: '08:30', tip: '에너지 대사 활성화', completed: true },
       { id: 3, name: '스포츠리서치 오메가3', ingredient: '오메가3', slot: '점심 식후', time: '13:00', tip: '지방이 포함된 식사 직후에 흡수율 극대화', completed: false },
       { id: 4, name: '닥터스베스트 마그네슘', ingredient: '마그네슘', slot: '취침 전', time: '22:00', tip: '근육 이완 및 신경 안정, 숙면 유도', completed: false }
     ];
 
-    // 화면 렌더링 함수 (시간순 자동 정렬)
+    // 변경사항을 로컬스토리지에 저장하는 함수
+    function saveData() {
+      localStorage.setItem('my_supplements', JSON.stringify(supplements));
+    }
+
+    // 화면 렌더링 함수
     function render() {
       supplements.sort((a, b) => a.time.localeCompare(b.time));
 
@@ -232,6 +125,7 @@
       };
 
       supplements.push(newItem);
+      saveData();
       nameInput.value = '';
       render();
     }
@@ -239,18 +133,18 @@
     // 체크 토글
     function toggleItem(id) {
       supplements = supplements.map(s => s.id === id ? { ...s, completed: !s.completed } : s);
+      saveData();
       render();
     }
 
     // 삭제
     function deleteItem(id) {
       supplements = supplements.filter(s => s.id !== id);
+      saveData();
       render();
     }
 
-    // --- 🔔 브라우저 푸시 알림 및 자동 타이머 제어 ---
-
-    // 알림 권한 상태 텍스트 업데이트
+    // --- 🔔 브라우저 푸시 알림 제어 ---
     function updatePermissionStatus() {
       const statusEl = document.getElementById('permission-status');
       if (!("Notification" in window)) {
@@ -271,7 +165,6 @@
       }
     }
 
-    // 권한 요청 및 수동 테스트 알림
     function requestAndTestNotification() {
       if (!("Notification" in window)) {
         alert("이 브라우저는 알림 기능을 지원하지 않습니다.");
@@ -294,12 +187,11 @@
       }
     }
 
-    // 알림 발송 공통 함수
     function triggerNotification(title, body) {
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification(title, {
           body: body,
-          icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965567.png'
+          icon: 'https://img.icons8.com/color/180/pill.png'
         });
       }
     }
@@ -313,10 +205,8 @@
       const now = new Date();
       const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-      // 이미 이번 분에 알림을 발송했다면 중복 방지
       if (lastNotifiedMin === currentHHMM) return;
 
-      // 현재 시각과 동일하고, 아직 복용 안 한(completed: false) 영양제 검색
       const dueItems = supplements.filter(s => !s.completed && s.time === currentHHMM);
 
       if (dueItems.length > 0) {
@@ -327,10 +217,8 @@
           `지금 챙겨 드세요: ${itemNames}`
         );
       }
-    }, 10000); // 10초마다 현재 시각 감시
+    }, 10000);
 
     // 초기 실행
     render();
   </script>
-</body>
-</html>
