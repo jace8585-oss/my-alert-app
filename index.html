@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>개인용 영양제 타임라인</title>
 
-  <!-- 💊 아이폰 PWA 전용 알약 아이콘 -->
+  <!-- 💊 아이폰/안드로이드 PWA 전용 알약 아이콘 -->
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/pill.png">
 
   <!-- Tailwind CSS CDN -->
@@ -103,7 +103,7 @@
       </button>
     </div>
 
-    <!-- 영양제 타임라인 리스트 -->
+    <!-- 영양제 타임라인 리스트 영역 -->
     <div id="timeline-list" class="space-y-2.5">
       <!-- 자바스크립트로 동적 생성됨 -->
     </div>
@@ -149,7 +149,7 @@
       '감태추출물': { slot: '취침 전', time: '22:00', tip: '수면의 질 개선' }
     };
 
-    // 💡 핸드폰 저장공간(localStorage)에서 데이터 가져오기 및 초기화
+    // 저장공간(localStorage)에서 데이터 불러오기
     const savedData = localStorage.getItem('my_supplements');
     let supplements = savedData ? JSON.parse(savedData) : [
       { id: 1, name: '락토핏 생유산균', ingredient: '유산균(프로바이오틱스)', slot: '아침 공복', time: '07:30', tip: '위산이 적은 공복에 미지근한 물과 함께', completed: false },
@@ -164,10 +164,13 @@
     }
 
     function render() {
-      supplements.sort((a, b) => a.time.localeCompare(b.time));
-
+      // 🛡️ 요소 미존재 시 에러 방지 안전장치
       const listEl = document.getElementById('timeline-list');
       if (!listEl) return;
+
+      // 시간순 정렬
+      supplements.sort((a, b) => a.time.localeCompare(b.time));
+
       listEl.innerHTML = '';
 
       if (supplements.length === 0) {
@@ -204,6 +207,7 @@
         });
       }
 
+      // 달성률 업데이트
       const completedCount = supplements.filter(s => s.completed).length;
       const totalCount = supplements.length;
       const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
@@ -220,7 +224,9 @@
       const nameInput = document.getElementById('item-name');
       const ingredientSelect = document.getElementById('item-ingredient');
 
-      const name = nameInput.value.trim() || ingredientSelect.value;
+      if (!ingredientSelect) return;
+
+      const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : ingredientSelect.value;
       const ingredient = ingredientSelect.value;
 
       const rule = TIME_MAP[ingredient] || { slot: '아침 식후', time: '08:30', tip: '식후 복용 추천' };
@@ -237,7 +243,7 @@
 
       supplements.push(newItem);
       saveData();
-      nameInput.value = '';
+      if (nameInput) nameInput.value = '';
       render();
     }
 
@@ -306,6 +312,7 @@
       }
     }
 
+    // 10초마다 체크하여 정각에 알림 발송
     let lastNotifiedMin = "";
     setInterval(() => {
       if (!("Notification" in window) || Notification.permission !== "granted") return;
@@ -327,8 +334,14 @@
       }
     }, 10000);
 
-    // 초기 실행
-    render();
+    // DOM 로드 완료 후 안정적으로 화면 렌더링
+    document.addEventListener('DOMContentLoaded', () => {
+      render();
+    });
+
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+      render();
+    }
   </script>
 </body>
 </html>
